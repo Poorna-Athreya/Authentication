@@ -1,3 +1,4 @@
+const AuthError = require('../errors/AuthError');
 const handlers = require('../handlers/auth.handler');
 const services = require('../services/auth.services');
 
@@ -17,16 +18,41 @@ describe('Authentication Handler Function', () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
   it('should return invalid message if username not given', async () => {
-
+    const req = { body: {} };
+    try {
+      await handlers.authHandler(req, res);
+    } catch (err) {
+      expect(res.json).toHaveBeenCalledWith({ error: err.message });
+      expect(res.status).toHaveBeenCalledWith(400);
+    }
   });
   it('should return invalid message if password not given', async () => {
-
+    const req = { body: { username: 'user' } };
+    try {
+      await handlers.authHandler(req, res);
+    } catch (err) {
+      expect(res.json).toHaveBeenCalledWith({ error: err.message });
+      expect(res.status).toHaveBeenCalledWith(400);
+    }
   });
   it('should return invalid message if username not valid/ present in the database', async () => {
-
+    jest.spyOn(services, 'authentication').mockResolvedValue([]);
+    const req = { body: { username: 'user', password: 'password' } };
+    try {
+      await handlers.authHandler(req, res);
+    } catch (err) {
+      expect(res.json).toHaveBeenCalledWith({ status: err.httpCode, message: 'No such username found!' });
+      expect(res.status).toHaveBeenCalledWith(400);
+    }
   });
   it('should return invalid message if password is not valid', async () => {
-
+    jest.spyOn(services, 'authentication').mockResolvedValue(new AuthError('Unauthorised', 'Password incorrect!', 401));
+    const req = { body: { username: 'user', password: 'password' } };
+    try {
+      await handlers.authHandler(req, res);
+    } catch (err) {
+      expect(res.json).toHaveBeenCalledWith({ status: err.httpCode, message: err.message });
+      expect(res.status).toHaveBeenCalledWith(401);
+    }
   });
 });
-// git commit -m "Feat: Basic login endpoint for success cases"
