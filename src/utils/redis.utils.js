@@ -1,6 +1,9 @@
 const Redis = require('ioredis');
+const env = require('dotenv');
 
-const redis = new Redis(6379, 'redis');
+env.config();
+
+const redis = new Redis(process.env.REDIS_PORT, process.env.REDIS_HOST);
 
 const setKey = (key, value) => {
   redis.set(key, value, 'EX', 360);
