@@ -6,14 +6,14 @@ services:
     user: root
     entrypoint: /app/entrypoint.sh
     environment:
-      DB_USERNAME: postgres
+      DB_USER: postgres
       DB_PASSWORD: postgres
-      DB_NAME: authentication
+      DB_NAME: Authentication
     depends_on:
       - redis
       - postgres
     ports:
-      - "9000:9000"
+      - "8000:8000"
   redis:
     image: redis
     ports:
@@ -25,4 +25,4 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: authentication
+      POSTGRES_DB: Authentication
