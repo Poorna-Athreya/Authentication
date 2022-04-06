@@ -2,55 +2,29 @@ const { Users } = require('../../models');
 const AuthError = require('../errors/AuthError');
 const utils = require('../utils/token');
 const redis = require('../utils/redis.utils');
-// const utilServices = require('./service.utils');
-
-// const login = async (givenUsername, givenPassword) => {
-//   let result = await Users.findAll({
-//     attributes: ['username', 'password'],
-//     where: {
-//       username: givenUsername,
-//     },
-//   });
-//   if (givenPassword !== result[0].password) {
-//       throw new AuthError('Unauthorised', 'Password incorrect!', 401);
-//     }
-//   }
-//   return result;
-// };
+const utilServices = require('./service.utils');
 
 const login = async (givenUsername, givenPassword) => {
-  const result = await Users.findAll({
-    attributes: ['username', 'password'],
-    where: {
-      username: givenUsername,
-    },
-  });
-  if (result.length === 0) {
-    const [user, created] = await Users.findOrCreate({
-      where: {
-        username: givenUsername,
-        password: givenPassword,
-      },
-      attributes: { exclude: ['id', 'createdAt', 'updatedAt'] },
-    });
-    if (created) return `New user ${user.username} Created!`;
-    return user;
+  const user = await utilServices.findUser(givenUsername);
+  if (user.length > 0) {
+    if (givenPassword !== user[0].password) {
+      throw new AuthError('Unauthorised', 'Password incorrect!', 401);
+    }
+    const token = utils.createToken(givenUsername);
+    redis.setKey(token, givenUsername);
+    return { user, token };
   }
-  if (givenPassword !== result[0].password) {
-    throw new AuthError('Unauthorised', 'Password incorrect!', 401);
-  }
-  const token = utils.createToken(givenUsername);
-  redis.setKey(token, givenUsername);
-  return { result, token };
+  return { user: '' };
 };
 
-// const signup = async (givenUsername, givenPassword) => {
-//   const existingUsers = await utilServices.getAllUsers();
-//   existingUsers.forEach((user) => {
-//     if (user.username === givenUsername)
-// throw new AuthError('BadRequest', 'Invalid, this username already exists!', 400);
-//   });
-// };
+const signup = async (givenUsername, givenPassword) => {
+  const existingUser = await utilServices.findUser(givenUsername);
+  if (existingUser.length > 0) throw new AuthError('BadRequest', 'Invalid, this username already exists!', 400);
+  await Users.create({
+    username: givenUsername, password: givenPassword, createdAt: new Date(), updatedAt: new Date(),
+  });
+  return 'Successfully created new user!';
+};
 
 const validateToken = (token) => {
   const user = redis.getValue(token);
@@ -59,5 +33,5 @@ const validateToken = (token) => {
 module.exports = {
   login,
   validateToken,
-  // signup,
+  signup,
 };

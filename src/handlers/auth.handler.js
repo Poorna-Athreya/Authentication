@@ -1,4 +1,4 @@
-// const AuthError = require('../errors/AuthError');
+const AuthError = require('../errors/AuthError');
 const InputError = require('../errors/InputError');
 const services = require('../services/auth.services');
 
@@ -10,17 +10,19 @@ const loginHandler = async (req, res) => {
     if (!password) throw new InputError('BadRequest', 'Invalid, password not given!', 400);
     else if (typeof password !== 'string') throw new InputError('BadRequest', 'Invalid, password should be valid string!', 400);
     const result = await services.login(username, password);
-    res.header('token', result.token);
-    res.json(result).status(200);
-    // if (result.length > 0) {
-    // res.json(
-    //   { status: 200, message: 'Successfully logged in' },
-    // ).status(200);
-    // } else throw new InputError('BadRequest', 'No such username found!', 400);
-    // if (typeof result === 'string') res.json({ status: 201, message: result }).status(201);
-    // res.json({ status: 200, message: 'Successfully logged in' }).status(200);
+    if (result.user !== '') {
+      res.header('token', result.token);
+      res.json(
+        { status: 200, message: 'Successfully logged in', token: result.token },
+      ).status(200);
+    } else throw new InputError('BadRequest', 'No such username found!', 400);
   } catch (err) {
-    res.json({ status: err.httpCode, message: err.message }).status(err.httpCode);
+    if (err instanceof AuthError) {
+      res.status(err.httpCode).json({ status: err.httpCode, message: err.message });
+    }
+    if (err instanceof InputError) {
+      res.status(err.httpCode).json({ status: err.httpCode, message: err.message });
+    }
   }
 };
 
@@ -31,16 +33,13 @@ const signupHandler = async (req, res) => {
     else if (typeof username !== 'string') throw new InputError('BadRequest', 'Invalid, username should be valid string!', 400);
     if (!password) throw new InputError('BadRequest', 'Invalid, password not given!', 400);
     else if (typeof password !== 'string') throw new InputError('BadRequest', 'Invalid, password should be valid string!', 400);
-    const result = await services.login(username, password);
-    // // res.json(result).status(200);
-    // if (result.length > 0) {
-    // res.json(
-    //   { status: 200, message: 'Successfully logged in' },
-    // ).status(200);
-    // } else throw new InputError('BadRequest', 'No such username found!', 400);
-    if (typeof result === 'string') res.json({ status: 201, message: result }).status(201);
-    res.json({ status: 200, message: 'Successfully logged in' }).status(200);
+    console.log('Handler');
+    const message = await services.signup(username, password);
+    res.status(200).json({ status: 200, message });
   } catch (err) {
+    if (err instanceof InputError) {
+      res.status(err.httpCode).json({ status: err.httpCode, message: err.message });
+    }
     res.json({ status: err.httpCode, message: err.message }).status(err.httpCode);
   }
 };

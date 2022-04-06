@@ -13,7 +13,7 @@ const host = process.env.HOST || 'localhost';
 
 app.use(bodyParser.json());
 app.use('/login', loginRoute);
-app.use('/signup  ', signupRoute);
+app.use('/signup', signupRoute);
 app.use('/validateToken', validateTokenRoute);
 
 app.listen(port, () => {
